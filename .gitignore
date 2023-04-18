@@ -1,0 +1,8 @@
+# JetBrains IDEs
+
+.idea/
+
+# Build directories
+
+out/
+*build*/
