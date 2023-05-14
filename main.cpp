@@ -24,12 +24,19 @@ std::string msToTimeStr(long long t) {
     return fmt::format("{:0>2}:{:0>2}:{:0>2},{:0>3}", h, m, s, ms);
 }
 
-auto skip_n_frames(cv::VideoCapture & i, long long n) {
-    while (n > 0) {
-        i.grab();
-        n -= 1;
+class SkipVideoCapture : public cv::VideoCapture {
+public:
+    explicit SkipVideoCapture(const cv::String& filename) : cv::VideoCapture(filename) {}
+    auto getFPS() { return this->get(cv::VideoCaptureProperties::CAP_PROP_FPS); }
+    auto getPosMilliseconds() { return this->get(cv::VideoCaptureProperties::CAP_PROP_POS_MSEC); }
+    auto skip(double t) {
+        auto n = static_cast<long long>(t * this->getFPS());
+        while (n > 0) {
+            this->grab();
+            n -= 1;
+        }
     }
-}
+};
 
 int main(int argc, char * argv[]) {
     fs::path input_file;
@@ -90,7 +97,7 @@ int main(int argc, char * argv[]) {
     std::cout << "Detection box: " << box << "\n";
     std::cout << "Gap seconds: " << gap << "\n";
 
-    auto i = cv::VideoCapture(input_file.string());
+    auto i = SkipVideoCapture(input_file.string());
 
     if (!i.isOpened()) {
         std::cout << "Cannot open video file." << "\n";
@@ -118,15 +125,15 @@ int main(int argc, char * argv[]) {
     while (i.isOpened()) {
         if (!i.grab()) { break; }
         i.retrieve(frame);
-        
+
         frame(box).copyTo(t);
 
         cv::cvtColor(t, t, cv::ColorConversionCodes::COLOR_BGR2GRAY);
         cv::medianBlur(t, t, 3);
         cv::threshold(t, t, threshold, 255, cv::ThresholdTypes::THRESH_BINARY_INV);
 
-        auto ms = i.get(cv::VideoCaptureProperties::CAP_PROP_POS_MSEC);
-        auto fps = i.get(cv::VideoCaptureProperties::CAP_PROP_FPS);
+        auto ms = i.getPosMilliseconds();
+
         api->SetImage(t.data, t.cols, t.rows, 1, t.step);
         auto conf = api->MeanTextConf();
         auto p = std::unique_ptr<char[]>(api->GetUTF8Text());
@@ -140,7 +147,7 @@ int main(int argc, char * argv[]) {
                             << std::to_string(cnt) << "\n"
                             << msToTimeStr(prev_ms) << " --> " << msToTimeStr(ms) << "\n"
                             << prev_text << "\n";
-                    skip_n_frames(i, fps * duration);
+                    i.skip(duration);
                 }
                 prev_text = std::move(text);
                 prev_ms = ms;
@@ -152,7 +159,7 @@ int main(int argc, char * argv[]) {
         auto k = cv::waitKey(30);
         if (k == 27) { break; }
 
-        skip_n_frames(i, fps * gap);
+        i.skip(gap);
     }
 
     return 0;
