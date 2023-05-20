@@ -8,5 +8,8 @@ find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(fmt CONFIG REQUIRED)
 find_package(Tesseract CONFIG REQUIRED)
 
+add_library(mysrt OBJECT srt.h srt.cpp)
+target_link_libraries(mysrt fmt::fmt)
+
 add_executable(main main.cpp)
-target_link_libraries(main PRIVATE ${OpenCV_LIBS} Boost::program_options fmt::fmt Tesseract::libtesseract)
+target_link_libraries(main PRIVATE ${OpenCV_LIBS} Boost::program_options fmt::fmt Tesseract::libtesseract mysrt)

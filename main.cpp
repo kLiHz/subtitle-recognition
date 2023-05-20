@@ -8,21 +8,12 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/videoio.hpp"
 #include "opencv2/highgui.hpp"
-#include "fmt/core.h"
 #include "tesseract/baseapi.h"
+
+#include "srt.h"
 
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
-
-std::string msToTimeStr(long long t) {
-    auto ms = t % 1000;
-    auto s = t / 1000;
-    auto m = s / 60;
-    auto h = m / 60;
-    m %= 60;
-    s %= 60;
-    return fmt::format("{:0>2}:{:0>2}:{:0>2},{:0>3}", h, m, s, ms);
-}
 
 class SkipVideoCapture : public cv::VideoCapture {
 public:
