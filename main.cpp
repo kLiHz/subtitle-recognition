@@ -134,10 +134,7 @@ int main(int argc, char * argv[]) {
             if (text != prev_text) {
                 if (!prev_text.empty()) {
                     cnt += 1;
-                    std::cout
-                            << std::to_string(cnt) << "\n"
-                            << msToTimeStr(prev_ms) << " --> " << msToTimeStr(ms) << "\n"
-                            << prev_text << "\n";
+                    std::cout << composeSrtItem(cnt, prev_ms, ms, prev_text);
                     i.skip(duration);
                 }
                 prev_text = std::move(text);
