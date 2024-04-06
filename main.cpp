@@ -121,7 +121,31 @@ int main(int argc, char * argv[]) {
 
         cv::cvtColor(t, t, cv::ColorConversionCodes::COLOR_BGR2GRAY);
         cv::medianBlur(t, t, 3);
-        cv::threshold(t, t, threshold, 255, cv::ThresholdTypes::THRESH_BINARY_INV);
+        cv::threshold(t, t, threshold, 255, cv::ThresholdTypes::THRESH_BINARY);
+
+        const auto first_row = t.ptr<uchar>(0);
+        const auto last_row = t.ptr<uchar>(t.rows - 1);
+
+        for (auto j = 0; j < t.cols; j += 1) {
+            if (first_row[j] > 0) {
+                cv::floodFill(t, {j, 0}, 0);
+            }
+            if (last_row[j] > 0) {
+                cv::floodFill(t, {j, t.rows - 1}, 0);
+            }
+        }
+
+        for (auto i = 0; i < t.rows; i += 1) {
+            if (t.at<uchar>(i, 0) > 0) {  // it is cv::Mat::at<T>(row, col) since row dimension comes first
+                cv::floodFill(t, {0, i}, 0);
+            }
+            if (t.at<uchar>(i, t.cols - 1) > 0) {
+                cv::floodFill(t, {t.cols - 1, i}, 0);
+            }
+        }
+
+        cv::dilate(t, t, cv::Mat());
+        cv::threshold(t, t, 128, 255, cv::ThresholdTypes::THRESH_BINARY_INV);
 
         auto ms = i.getPosMilliseconds();
 
